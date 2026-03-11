@@ -4,89 +4,144 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>IXL | Math, Language Arts, Science, Social Studies, and Spanish</title>
-    <link rel="icon" type="image/png" href="https://www.ixl.com/dv3/powZqMuTE7du4asFrVyNGxxoqkw/yui3/opengraph/assets/square_og_ixl.png">
+    <link rel="icon" type="image/png" href="https://www.ixl.com">
     <style>
         :root { --accent: #4a90e2; }
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #000; font-family: 'Segoe UI', sans-serif; color: white; }
         canvas { position: fixed; top: 0; left: 0; z-index: 0; }
 
         /* Setup Wizard UI */
-        .overlay { position: fixed; inset: 0; display: flex; justify-content: center; align-items: center; z-index: 10; background: rgba(0,0,0,0.8); transition: opacity 0.5s; }
-        .setup-box { background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(20px); padding: 40px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.2); text-align: center; width: 350px; }
-        .setup-box h2 { margin-top: 0; }
-        .hidden { display: none; }
+        .overlay { position: fixed; inset: 0; display: flex; justify-content: center; align-items: center; z-index: 10; background: rgba(0,0,0,0.85); transition: opacity 0.5s; }
+        .setup-box { background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(20px); padding: 40px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.2); text-align: center; width: 400px; }
+        .hidden { display: none !important; }
         
         .color-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 20px 0; }
         .color-opt { width: 40px; height: 40px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; }
-        .color-opt:hover { transform: scale(1.1); }
         .active-color { border-color: white; }
 
         .btn-next { background: var(--accent); color: white; border: none; padding: 10px 30px; border-radius: 8px; cursor: pointer; font-weight: bold; margin-top: 20px; }
+        select, .ai-input { background: rgba(255,255,255,0.1); color: white; border: 1px solid #555; padding: 12px; border-radius: 8px; width: 100%; margin: 15px 0; outline: none; }
+
+        /* Welcome Text */
+        #welcome-screen { font-size: 4rem; font-weight: 800; transform: scale(0.5); opacity: 0; transition: all 1s ease; }
+        #welcome-screen.zoom { transform: scale(1.1); opacity: 1; }
+
+        /* Main UI & Bottom Bar */
+        .main-ui { position: relative; z-index: 5; opacity: 0; transition: opacity 1s; display: none; height: 100vh; width: 100vw; }
+        .search-area { position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%); text-align: center; }
         
-        select { background: rgba(255,255,255,0.1); color: white; border: 1px solid #555; padding: 10px; border-radius: 5px; width: 100%; margin: 20px 0; outline: none; }
+        .bottom-bar { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); display: flex; gap: 15px; }
+        .square-btn { width: 70px; height: 70px; background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.2); border-radius: 15px; display: flex; flex-direction: column; justify-content: center; align-items: center; cursor: pointer; transition: 0.3s; font-size: 0.8rem; }
+        .square-btn:hover { background: rgba(255,255,255,0.2); transform: translateY(-5px); }
+        .square-btn span { font-size: 1.5rem; }
 
-        /* Welcome Text Animation */
-        #welcome-screen { font-size: 4rem; font-weight: 800; transform: scale(0.5); opacity: 0; transition: all 1.5s cubic-bezier(0.17, 0.67, 0.83, 0.67); pointer-events: none; }
-        #welcome-screen.zoom { transform: scale(1.2); opacity: 1; }
-        .click-anywhere { position: absolute; bottom: 20%; font-size: 1rem; opacity: 0.6; animation: pulse 2s infinite; }
+        /* Chat Selection Menu */
+        .chat-options { display: flex; gap: 20px; margin-top: 20px; }
+        .chat-card { flex: 1; background: rgba(255,255,255,0.05); padding: 20px; border-radius: 15px; border: 1px solid rgba(255,255,255,0.1); cursor: pointer; transition: 0.3s; }
+        .chat-card:hover { border-color: var(--accent); background: rgba(255,255,255,0.15); }
 
-        /* Main P*oxy UI */
-        .main-ui { position: relative; z-index: 5; opacity: 0; transition: opacity 1s; display: none; }
-        @keyframes pulse { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }
+        /* Frame for FreezeNova */
+        #chat-frame-container { position: fixed; inset: 50px; background: white; border-radius: 20px; overflow: hidden; z-index: 100; display: none; }
+        #chat-frame-container iframe { width: 100%; height: 100%; border: none; }
+        .close-btn { position: absolute; top: 10px; right: 20px; color: black; font-weight: bold; cursor: pointer; font-size: 20px; }
     </style>
 </head>
 <body>
 
     <canvas id="starfield"></canvas>
 
-    <!-- Step 1: Color Theme -->
+    <!-- STEP 1: COLOR -->
     <div id="step-color" class="overlay">
         <div class="setup-box">
             <h2>Theme Color</h2>
-            <p>Choose your p*oxy accent:</p>
             <div class="color-grid">
                 <div class="color-opt" style="background:#4a90e2" onclick="setAccent('#4a90e2')"></div>
                 <div class="color-opt" style="background:#e74c3c" onclick="setAccent('#e74c3c')"></div>
                 <div class="color-opt" style="background:#2ecc71" onclick="setAccent('#2ecc71')"></div>
-                <div class="color-opt" style="background:#f1c40f" onclick="setAccent('#f1c40f')"></div>
                 <div class="color-opt" style="background:#9b59b6" onclick="setAccent('#9b59b6')"></div>
-                <div class="color-opt" style="background:#1abc9c" onclick="setAccent('#1abc9c')"></div>
-                <div class="color-opt" style="background:#e67e22" onclick="setAccent('#e67e22')"></div>
-                <div class="color-opt" style="background:#ffffff" onclick="setAccent('#ffffff')"></div>
             </div>
             <button class="btn-next" onclick="nextStep('step-color', 'step-server')">Next</button>
         </div>
     </div>
 
-    <!-- Step 2: Server Selection -->
+    <!-- STEP 2: SERVER -->
     <div id="step-server" class="overlay hidden">
         <div class="setup-box">
             <h2>Select Server</h2>
-            <p>Which p*oxy server do you want to use?</p>
-            <select id="server-select">
-                <option value="main">Main</option>
-                <option value="sj">SJ</option>
-            </select>
+            <select id="server-select"><option>Main</option><option>SJ</option></select>
             <button class="btn-next" onclick="showWelcome()">Next</button>
         </div>
     </div>
 
-    <!-- Step 3: Welcome Screen -->
-    <div id="step-welcome" class="overlay hidden" onclick="startApp()" style="cursor: pointer;">
+    <!-- STEP 3: WELCOME -->
+    <div id="step-welcome" class="overlay hidden" onclick="startApp()">
         <div id="welcome-screen">Welcome, Aboard</div>
-        <div class="click-anywhere">Click Anywhere to Begin</div>
+        <div style="position:absolute; bottom:20%; opacity:0.6;">Click Anywhere to Begin</div>
     </div>
 
-    <!-- Final UI (The P*oxy Search) -->
+    <!-- MAIN INTERFACE -->
     <div id="main-content" class="main-ui">
-        <div style="text-align: center; margin-top: 20vh;">
-            <h1 style="font-size: 3rem;">Stellar P*oxy</h1>
-            <input type="text" placeholder="Enter URL..." style="padding:15px; width:400px; border-radius:10px; border:none;">
+        <div class="search-area">
+            <h1 style="font-size: 3rem; margin-bottom: 20px;">Stellar P*oxy</h1>
+            <input type="text" placeholder="Enter URL..." class="ai-input" style="width: 450px;">
+        </div>
+
+        <div class="bottom-bar">
+            <div class="square-btn" onclick="openChatMenu()">
+                <span>💭</span>
+                chat
+            </div>
+            <!-- Future buttons go here -->
         </div>
     </div>
 
+    <!-- CHAT SELECTION OVERLAY -->
+    <div id="chat-menu" class="overlay hidden">
+        <div class="setup-box" style="width: 500px;">
+            <h2>Choose your Chatter</h2>
+            <div class="chat-options">
+                <div class="chat-card" onclick="startNeuralaSetup()">
+                    <h3>Neurala Bot</h3>
+                    <p style="font-size: 0.8rem; opacity: 0.7;">Official Website Bot</p>
+                </div>
+                <div class="chat-card" onclick="openFreezeNova()">
+                    <h3>FreezeNova</h3>
+                    <p style="font-size: 0.8rem; opacity: 0.7;">External AI Chat</p>
+                </div>
+            </div>
+            <button class="btn-next" style="background:#444" onclick="closeOverlays()">Cancel</button>
+        </div>
+    </div>
+
+    <!-- NEURALA NAMING -->
+    <div id="neurala-setup" class="overlay hidden">
+        <div class="setup-box">
+            <h2>Name your Chatter</h2>
+            <input type="text" id="bot-name-input" class="ai-input" placeholder="Enter name...">
+            <button class="btn-next" onclick="finishNeuralaSetup()">Confirm</button>
+        </div>
+    </div>
+
+    <!-- NEURALA CHAT INTERFACE -->
+    <div id="neurala-chat" class="overlay hidden">
+        <div class="setup-box" style="width: 80%; max-width: 600px; height: 70vh; display: flex; flex-direction: column;">
+            <h3 id="display-bot-name">Chat</h3>
+            <div id="chat-messages" style="flex:1; overflow-y:auto; text-align:left; padding: 10px; border: 1px solid rgba(255,255,255,0.1); margin-bottom: 10px;">
+                <p><strong>System:</strong> Welcome, How May I help you? I am optimized for Math and Word Problems.</p>
+            </div>
+            <input type="text" id="chat-input" class="ai-input" placeholder="Type a math problem..." onkeypress="handleNeuralaChat(event)">
+            <button class="btn-next" style="background:#444" onclick="closeOverlays()">Close</button>
+        </div>
+    </div>
+
+    <!-- FREEZENOVA FRAME -->
+    <div id="chat-frame-container">
+        <div class="close-btn" onclick="closeFreezeNova()">X</div>
+        <iframe id="chat-iframe" src=""></iframe>
+    </div>
+
     <script>
-        // Starfield Logic
+        /* STARFIELD CODE (Same as previous) */
         const canvas = document.getElementById('starfield');
         const ctx = canvas.getContext('2d');
         let stars = [];
@@ -97,41 +152,49 @@
         const draw = () => {
             ctx.fillStyle = "black"; ctx.fillRect(0,0,canvas.width,canvas.height);
             ctx.translate(canvas.width/2, canvas.height/2);
-            stars.forEach(s => {
-                s.z -= 2; if(s.z <= 0) s.z = canvas.width;
-                let sx = (s.x / s.z) * canvas.width; let sy = (s.y / s.z) * canvas.width;
-                ctx.beginPath(); ctx.fillStyle = "white"; ctx.arc(sx, sy, (1 - s.z/canvas.width)*3, 0, Math.PI*2); ctx.fill();
-            });
+            stars.forEach(s => { s.z -= 2; if(s.z <= 0) s.z = canvas.width; let sx = (s.x / s.z) * canvas.width; let sy = (s.y / s.z) * canvas.width; ctx.beginPath(); ctx.fillStyle = "white"; ctx.arc(sx, sy, (1 - s.z/canvas.width)*3, 0, Math.PI*2); ctx.fill(); });
             ctx.setTransform(1,0,0,1,0,0); requestAnimationFrame(draw);
         };
 
-        // Navigation & Setup
-        function setAccent(color) {
-            document.documentElement.style.setProperty('--accent', color);
-            document.querySelectorAll('.color-opt').forEach(el => el.classList.remove('active-color'));
-            event.target.classList.add('active-color');
+        /* LOGIC */
+        function setAccent(color) { document.documentElement.style.setProperty('--accent', color); }
+        function nextStep(curr, next) { document.getElementById(curr).classList.add('hidden'); document.getElementById(next).classList.remove('hidden'); }
+        function showWelcome() { document.getElementById('step-server').classList.add('hidden'); document.getElementById('step-welcome').classList.remove('hidden'); setTimeout(() => document.getElementById('welcome-screen').classList.add('zoom'), 100); }
+        function startApp() { document.getElementById('step-welcome').classList.add('hidden'); document.getElementById('main-content').style.display = 'block'; setTimeout(() => document.getElementById('main-content').style.opacity = '1', 10); }
+
+        // Chat Logic
+        function openChatMenu() { document.getElementById('chat-menu').classList.remove('hidden'); }
+        function closeOverlays() { document.querySelectorAll('.overlay').forEach(el => { if(el.id !== 'step-color') el.classList.add('hidden'); }); }
+        
+        function openFreezeNova() {
+            document.getElementById('chat-iframe').src = "https://freezenova.ai/chat/";
+            document.getElementById('chat-frame-container').style.display = 'block';
+            closeOverlays();
+        }
+        function closeFreezeNova() { document.getElementById('chat-frame-container').style.display = 'none'; document.getElementById('chat-iframe').src = ""; }
+
+        function startNeuralaSetup() {
+            document.getElementById('chat-menu').classList.add('hidden');
+            document.getElementById('neurala-setup').classList.remove('hidden');
         }
 
-        function nextStep(current, next) {
-            document.getElementById(current).classList.add('hidden');
-            document.getElementById(next).classList.remove('hidden');
+        function finishNeuralaSetup() {
+            const name = document.getElementById('bot-name-input').value || "Neurala";
+            document.getElementById('display-bot-name').innerText = name;
+            document.getElementById('neurala-setup').classList.add('hidden');
+            document.getElementById('neurala-chat').classList.remove('hidden');
         }
 
-        function showWelcome() {
-            document.getElementById('step-server').classList.add('hidden');
-            document.getElementById('step-welcome').classList.remove('hidden');
-            setTimeout(() => {
-                document.getElementById('welcome-screen').classList.add('zoom');
-            }, 100);
-        }
-
-        function startApp() {
-            document.getElementById('step-welcome').style.opacity = '0';
-            setTimeout(() => {
-                document.getElementById('step-welcome').classList.add('hidden');
-                document.getElementById('main-content').style.display = 'block';
-                setTimeout(() => document.getElementById('main-content').style.opacity = '1', 10);
-            }, 500);
+        function handleNeuralaChat(e) {
+            if (e.key === 'Enter') {
+                const val = e.target.value;
+                const box = document.getElementById('chat-messages');
+                box.innerHTML += `<p><strong>You:</strong> ${val}</p>`;
+                // Placeholder for "Super Smart" Math AI integration
+                box.innerHTML += `<p><strong>Bot:</strong> Thinking... (Math Engine Ready)</p>`;
+                e.target.value = "";
+                box.scrollTop = box.scrollHeight;
+            }
         }
 
         window.addEventListener('resize', init);
