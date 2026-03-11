@@ -3,199 +3,139 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Stellar P*oxy</title>
+    <title>IXL | Math, Language Arts, Science, Social Studies, and Spanish</title>
+    <link rel="icon" type="image/png" href="https://www.ixl.com/dv3/powZqMuTE7du4asFrVyNGxxoqkw/yui3/opengraph/assets/square_og_ixl.png">
     <style>
-        /* CSS STYLING */
-        body, html {
-            margin: 0;
-            padding: 0;
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-            background-color: #000;
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
+        :root { --accent: #4a90e2; }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #000; font-family: 'Segoe UI', sans-serif; color: white; }
+        canvas { position: fixed; top: 0; left: 0; z-index: 0; }
 
-        #starfield {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 0;
-        }
+        /* Setup Wizard UI */
+        .overlay { position: fixed; inset: 0; display: flex; justify-content: center; align-items: center; z-index: 10; background: rgba(0,0,0,0.8); transition: opacity 0.5s; }
+        .setup-box { background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(20px); padding: 40px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.2); text-align: center; width: 350px; }
+        .setup-box h2 { margin-top: 0; }
+        .hidden { display: none; }
+        
+        .color-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 20px 0; }
+        .color-opt { width: 40px; height: 40px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; }
+        .color-opt:hover { transform: scale(1.1); }
+        .active-color { border-color: white; }
 
-        .glass-container {
-            position: relative;
-            z-index: 1;
-            background: rgba(255, 255, 255, 0.07);
-            backdrop-filter: blur(15px);
-            -webkit-backdrop-filter: blur(15px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 24px;
-            padding: 3rem;
-            text-align: center;
-            color: white;
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.8);
-            max-width: 500px;
-            width: 90%;
-        }
+        .btn-next { background: var(--accent); color: white; border: none; padding: 10px 30px; border-radius: 8px; cursor: pointer; font-weight: bold; margin-top: 20px; }
+        
+        select { background: rgba(255,255,255,0.1); color: white; border: 1px solid #555; padding: 10px; border-radius: 5px; width: 100%; margin: 20px 0; outline: none; }
 
-        h1 {
-            font-size: 3rem;
-            margin: 0 0 0.5rem 0;
-            letter-spacing: -1px;
-            background: linear-gradient(to bottom, #fff, #888);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
+        /* Welcome Text Animation */
+        #welcome-screen { font-size: 4rem; font-weight: 800; transform: scale(0.5); opacity: 0; transition: all 1.5s cubic-bezier(0.17, 0.67, 0.83, 0.67); pointer-events: none; }
+        #welcome-screen.zoom { transform: scale(1.2); opacity: 1; }
+        .click-anywhere { position: absolute; bottom: 20%; font-size: 1rem; opacity: 0.6; animation: pulse 2s infinite; }
 
-        p {
-            font-size: 1.1rem;
-            color: rgba(255, 255, 255, 0.6);
-            margin-bottom: 2rem;
-        }
-
-        .input-group {
-            display: flex;
-            background: rgba(255, 255, 255, 0.1);
-            padding: 5px;
-            border-radius: 12px;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            transition: all 0.3s ease;
-        }
-
-        .input-group:focus-within {
-            border-color: #4a90e2;
-            box-shadow: 0 0 15px rgba(74, 144, 226, 0.3);
-        }
-
-        input {
-            flex: 1;
-            background: transparent;
-            border: none;
-            padding: 12px 15px;
-            color: white;
-            font-size: 1rem;
-            outline: none;
-        }
-
-        input::placeholder {
-            color: rgba(255, 255, 255, 0.4);
-        }
-
-        button {
-            background: #4a90e2;
-            color: white;
-            border: none;
-            padding: 10px 25px;
-            border-radius: 8px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-
-        button:hover {
-            background: #357abd;
-        }
+        /* Main P*oxy UI */
+        .main-ui { position: relative; z-index: 5; opacity: 0; transition: opacity 1s; display: none; }
+        @keyframes pulse { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }
     </style>
 </head>
 <body>
 
     <canvas id="starfield"></canvas>
 
-    <div class="glass-container">
-        <h1>Stellar P*oxy</h1>
-        <p>Your gateway to the unrestricted web.</p>
-        
-        <div class="input-group">
-            <input type="text" id="url-input" placeholder="Enter URL or search term..." autocomplete="off">
-            <button onclick="launchPoxy()">Launch</button>
+    <!-- Step 1: Color Theme -->
+    <div id="step-color" class="overlay">
+        <div class="setup-box">
+            <h2>Theme Color</h2>
+            <p>Choose your p*oxy accent:</p>
+            <div class="color-grid">
+                <div class="color-opt" style="background:#4a90e2" onclick="setAccent('#4a90e2')"></div>
+                <div class="color-opt" style="background:#e74c3c" onclick="setAccent('#e74c3c')"></div>
+                <div class="color-opt" style="background:#2ecc71" onclick="setAccent('#2ecc71')"></div>
+                <div class="color-opt" style="background:#f1c40f" onclick="setAccent('#f1c40f')"></div>
+                <div class="color-opt" style="background:#9b59b6" onclick="setAccent('#9b59b6')"></div>
+                <div class="color-opt" style="background:#1abc9c" onclick="setAccent('#1abc9c')"></div>
+                <div class="color-opt" style="background:#e67e22" onclick="setAccent('#e67e22')"></div>
+                <div class="color-opt" style="background:#ffffff" onclick="setAccent('#ffffff')"></div>
+            </div>
+            <button class="btn-next" onclick="nextStep('step-color', 'step-server')">Next</button>
+        </div>
+    </div>
+
+    <!-- Step 2: Server Selection -->
+    <div id="step-server" class="overlay hidden">
+        <div class="setup-box">
+            <h2>Select Server</h2>
+            <p>Which p*oxy server do you want to use?</p>
+            <select id="server-select">
+                <option value="main">Main</option>
+                <option value="sj">SJ</option>
+            </select>
+            <button class="btn-next" onclick="showWelcome()">Next</button>
+        </div>
+    </div>
+
+    <!-- Step 3: Welcome Screen -->
+    <div id="step-welcome" class="overlay hidden" onclick="startApp()" style="cursor: pointer;">
+        <div id="welcome-screen">Welcome, Aboard</div>
+        <div class="click-anywhere">Click Anywhere to Begin</div>
+    </div>
+
+    <!-- Final UI (The P*oxy Search) -->
+    <div id="main-content" class="main-ui">
+        <div style="text-align: center; margin-top: 20vh;">
+            <h1 style="font-size: 3rem;">Stellar P*oxy</h1>
+            <input type="text" placeholder="Enter URL..." style="padding:15px; width:400px; border-radius:10px; border:none;">
         </div>
     </div>
 
     <script>
-        /* ADVANCED STARFIELD ENGINE */
+        // Starfield Logic
         const canvas = document.getElementById('starfield');
         const ctx = canvas.getContext('2d');
-
         let stars = [];
-        const starCount = 1000;
-        const speed = 0.05; // Base warp speed
-        let centerX, centerY;
+        const init = () => {
+            canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+            stars = Array.from({length: 800}, () => ({ x: Math.random()*canvas.width - canvas.width/2, y: Math.random()*canvas.height - canvas.height/2, z: Math.random()*canvas.width }));
+        };
+        const draw = () => {
+            ctx.fillStyle = "black"; ctx.fillRect(0,0,canvas.width,canvas.height);
+            ctx.translate(canvas.width/2, canvas.height/2);
+            stars.forEach(s => {
+                s.z -= 2; if(s.z <= 0) s.z = canvas.width;
+                let sx = (s.x / s.z) * canvas.width; let sy = (s.y / s.z) * canvas.width;
+                ctx.beginPath(); ctx.fillStyle = "white"; ctx.arc(sx, sy, (1 - s.z/canvas.width)*3, 0, Math.PI*2); ctx.fill();
+            });
+            ctx.setTransform(1,0,0,1,0,0); requestAnimationFrame(draw);
+        };
 
-        function init() {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-            centerX = canvas.width / 2;
-            centerY = canvas.height / 2;
-            
-            stars = [];
-            for (let i = 0; i < starCount; i++) {
-                stars.push({
-                    x: Math.random() * canvas.width - centerX,
-                    y: Math.random() * canvas.height - centerY,
-                    z: Math.random() * canvas.width,
-                    o: 0.5 + Math.random() * 0.5 // Opacity
-                });
-            }
+        // Navigation & Setup
+        function setAccent(color) {
+            document.documentElement.style.setProperty('--accent', color);
+            document.querySelectorAll('.color-opt').forEach(el => el.classList.remove('active-color'));
+            event.target.classList.add('active-color');
         }
 
-        function updateAndDraw() {
-            ctx.fillStyle = 'black';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-            for (let i = 0; i < stars.length; i++) {
-                let s = stars[i];
-
-                // Move star closer
-                s.z -= 2; 
-
-                // Reset star if it passes the screen
-                if (s.z <= 0) {
-                    s.z = canvas.width;
-                    s.x = Math.random() * canvas.width - centerX;
-                    s.y = Math.random() * canvas.height - centerY;
-                }
-
-                // Project 3D coordinates to 2D screen
-                const x = (s.x / s.z) * canvas.width + centerX;
-                const y = (s.y / s.z) * canvas.width + centerY;
-                const radius = (1 - s.z / canvas.width) * 2.5;
-
-                // Only draw if on screen
-                if (x >= 0 && x <= canvas.width && y >= 0 && y <= canvas.height) {
-                    ctx.beginPath();
-                    ctx.arc(x, y, radius, 0, Math.PI * 2);
-                    ctx.fillStyle = `rgba(255, 255, 255, ${s.o})`;
-                    ctx.fill();
-                }
-            }
-
-            requestAnimationFrame(updateAndDraw);
+        function nextStep(current, next) {
+            document.getElementById(current).classList.add('hidden');
+            document.getElementById(next).classList.remove('hidden');
         }
 
-        /* FUNCTIONALITY */
-        function launchPoxy() {
-            const input = document.getElementById('url-input').value;
-            if (!input) return;
-            
-            // Logic for p*oxy redirection goes here
-            console.log("Redirecting through P*oxy:", input);
-            alert("P*oxy connection established for: " + input);
+        function showWelcome() {
+            document.getElementById('step-server').classList.add('hidden');
+            document.getElementById('step-welcome').classList.remove('hidden');
+            setTimeout(() => {
+                document.getElementById('welcome-screen').classList.add('zoom');
+            }, 100);
         }
 
-        // Handle Enter key
-        document.getElementById('url-input').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') launchPoxy();
-        });
+        function startApp() {
+            document.getElementById('step-welcome').style.opacity = '0';
+            setTimeout(() => {
+                document.getElementById('step-welcome').classList.add('hidden');
+                document.getElementById('main-content').style.display = 'block';
+                setTimeout(() => document.getElementById('main-content').style.opacity = '1', 10);
+            }, 500);
+        }
 
         window.addEventListener('resize', init);
-        init();
-        updateAndDraw();
+        init(); draw();
     </script>
 </body>
 </html>
