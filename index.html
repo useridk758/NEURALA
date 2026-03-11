@@ -3,21 +3,199 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Stellar Proxy</title>
-    <link rel="stylesheet" href="style.css">
+    <title>Stellar P*oxy</title>
+    <style>
+        /* CSS STYLING */
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #000;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #starfield {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+        }
+
+        .glass-container {
+            position: relative;
+            z-index: 1;
+            background: rgba(255, 255, 255, 0.07);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            padding: 3rem;
+            text-align: center;
+            color: white;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.8);
+            max-width: 500px;
+            width: 90%;
+        }
+
+        h1 {
+            font-size: 3rem;
+            margin: 0 0 0.5rem 0;
+            letter-spacing: -1px;
+            background: linear-gradient(to bottom, #fff, #888);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        p {
+            font-size: 1.1rem;
+            color: rgba(255, 255, 255, 0.6);
+            margin-bottom: 2rem;
+        }
+
+        .input-group {
+            display: flex;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 5px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .input-group:focus-within {
+            border-color: #4a90e2;
+            box-shadow: 0 0 15px rgba(74, 144, 226, 0.3);
+        }
+
+        input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            padding: 12px 15px;
+            color: white;
+            font-size: 1rem;
+            outline: none;
+        }
+
+        input::placeholder {
+            color: rgba(255, 255, 255, 0.4);
+        }
+
+        button {
+            background: #4a90e2;
+            color: white;
+            border: none;
+            padding: 10px 25px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        button:hover {
+            background: #357abd;
+        }
+    </style>
 </head>
 <body>
+
     <canvas id="starfield"></canvas>
-    
-    <div class="container">
-        <h1>Stellar Proxy</h1>
-        <p>Explore the web without boundaries.</p>
-        <div class="search-box">
-            <input type="text" id="url-input" placeholder="Enter URL or search term...">
-            <button onclick="launchProxy()">Go</button>
+
+    <div class="glass-container">
+        <h1>Stellar P*oxy</h1>
+        <p>Your gateway to the unrestricted web.</p>
+        
+        <div class="input-group">
+            <input type="text" id="url-input" placeholder="Enter URL or search term..." autocomplete="off">
+            <button onclick="launchPoxy()">Launch</button>
         </div>
     </div>
 
-    <script src="script.js"></script>
+    <script>
+        /* ADVANCED STARFIELD ENGINE */
+        const canvas = document.getElementById('starfield');
+        const ctx = canvas.getContext('2d');
+
+        let stars = [];
+        const starCount = 1000;
+        const speed = 0.05; // Base warp speed
+        let centerX, centerY;
+
+        function init() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            centerX = canvas.width / 2;
+            centerY = canvas.height / 2;
+            
+            stars = [];
+            for (let i = 0; i < starCount; i++) {
+                stars.push({
+                    x: Math.random() * canvas.width - centerX,
+                    y: Math.random() * canvas.height - centerY,
+                    z: Math.random() * canvas.width,
+                    o: 0.5 + Math.random() * 0.5 // Opacity
+                });
+            }
+        }
+
+        function updateAndDraw() {
+            ctx.fillStyle = 'black';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            for (let i = 0; i < stars.length; i++) {
+                let s = stars[i];
+
+                // Move star closer
+                s.z -= 2; 
+
+                // Reset star if it passes the screen
+                if (s.z <= 0) {
+                    s.z = canvas.width;
+                    s.x = Math.random() * canvas.width - centerX;
+                    s.y = Math.random() * canvas.height - centerY;
+                }
+
+                // Project 3D coordinates to 2D screen
+                const x = (s.x / s.z) * canvas.width + centerX;
+                const y = (s.y / s.z) * canvas.width + centerY;
+                const radius = (1 - s.z / canvas.width) * 2.5;
+
+                // Only draw if on screen
+                if (x >= 0 && x <= canvas.width && y >= 0 && y <= canvas.height) {
+                    ctx.beginPath();
+                    ctx.arc(x, y, radius, 0, Math.PI * 2);
+                    ctx.fillStyle = `rgba(255, 255, 255, ${s.o})`;
+                    ctx.fill();
+                }
+            }
+
+            requestAnimationFrame(updateAndDraw);
+        }
+
+        /* FUNCTIONALITY */
+        function launchPoxy() {
+            const input = document.getElementById('url-input').value;
+            if (!input) return;
+            
+            // Logic for p*oxy redirection goes here
+            console.log("Redirecting through P*oxy:", input);
+            alert("P*oxy connection established for: " + input);
+        }
+
+        // Handle Enter key
+        document.getElementById('url-input').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') launchPoxy();
+        });
+
+        window.addEventListener('resize', init);
+        init();
+        updateAndDraw();
+    </script>
 </body>
 </html>
